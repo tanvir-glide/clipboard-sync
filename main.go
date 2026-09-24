@@ -1,12 +1,18 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
-	"os/exec"
-	"runtime"
-	"crypto/sha256"
+  "bytes"
+  "fmt"
+  "os/exec"
+  "runtime"
+  "crypto/sha256"
+  "crypto/cipher"
+  "encoding/base64"
+  "io"
+  "crypto/rand"
+  "crypto/aes"
 )
+
 
 func clipboard_read() (string, error) {
   var cmd *exec.Cmd
@@ -28,10 +34,33 @@ func clipboard_read() (string, error) {
 	return out.String(), nil
 }
 
+
 func sha256sum(str string) []byte {
   hash := sha256.Sum256([]byte(str))
   return hash[:]
 }
+
+
+func encrypt_aes256(plainText, key []byte) (string, error) {
+  block, err := aes.NewCipher(key)
+  if err != nil {
+    return "", err
+  }
+
+  gcm, err := cipher.NewGCM(block)
+  if err != nil {
+    return "", err
+  }
+
+  nonce := make([]byte, gcm.NonceSize())
+  if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+          return "", err
+  }
+
+  encryptedText := gcm.Seal(nonce, nonce, plainText, nil)
+  return base64.StdEncoding.EncodeToString(encryptedText), nil
+}
+
 
 func main() {
   text, err := clipboard_read()
