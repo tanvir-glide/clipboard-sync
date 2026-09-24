@@ -34,6 +34,21 @@ func clipboard_read() (string, error) {
 	return out.String(), nil
 }
 
+func clipboard_write(text string) error {
+  var cmd *exec.Cmd
+
+  if runtime.GOOS == "darwin" {
+    cmd = exec.Command("pbcopy")
+  } else if runtime.GOOS == "linux" {
+    cmd = exec.Command("xclip", "-selection", "clipboard")
+  } else {
+    return fmt.Errorf("unsupported OS: %s", runtime.GOOS)
+  }
+
+  cmd.Stdin = bytes.NewBufferString(text)
+  return cmd.Run()
+}
+
 
 func sha256sum(str string) []byte {
   hash := sha256.Sum256([]byte(str))
